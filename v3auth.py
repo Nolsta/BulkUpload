@@ -4,6 +4,7 @@ from zipfile import ZipFile
 import boto3
 import pandas as pd
 from dotenv import load_dotenv
+from datetime import datetime
 load_dotenv()
 from zcrmsdk.src.com.zoho.api.authenticator import OAuthToken, TokenType
 from zcrmsdk.src.com.zoho.api.authenticator.store import DBStore
@@ -23,7 +24,6 @@ store = DBStore(host=os.getenv('host'), database_name=os.getenv('database_name')
                 user_name=os.getenv('user_name'), password=os.getenv('password'), port_number='3306')
 config = SDKConfig(auto_refresh_fields=True, pick_list_validation=False)
 resource_path = 's3://awethu-test0/TokenStore/python-app'
-
 Initializer.initialize(user=user, environment=environment, token=token, store=store, resource_path=resource_path,
                        sdk_config=config)
 def upload_file():
@@ -59,7 +59,12 @@ def upload_file():
         * param 3 -> Absolute File Path of the file to be attached
         """
 
-    stri = s3_resource.get_object(Bucket='prod-ritdu-ecom-data', Key='propensity/data/output/products_ranked_20210416.csv')
+    current_year = pd.to_datetime(datetime.now()).strftime("%Y")
+    current_month = pd.to_datetime(datetime.now()).strftime("%m")
+    current_day = pd.to_datetime(datetime.now()).strftime("%d")
+    Key = "products_ranked_{0}{1}{2}.csv".format(current_year, current_month, current_day)
+    print(Key)
+    stri = s3_resource.get_object(Bucket='prod-ritdu-ecom-data', Key='propensity/data/output/'+Key)
 
     train_label_string = stri['Body'].read().decode('utf-8')
 
@@ -276,9 +281,6 @@ def create_bulk_write_job(module_api_name):
 
                 for key, value in details.items():
                     print(key + ' : ' + str(value))
-                    f = open("BulkJobs.txt", "a")
-                    f.write(key + ' : ' + str(value) + ' ')
-                    f.close()
 
                 # Get the Message
                 print("Message: " + response_object.get_message().get_value())
